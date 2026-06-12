@@ -9,7 +9,8 @@ python-dotenv==1.2.2
 uvicorn==0.41.0
 wrapt==2.1.1
 
-# NLP & AI Processing
+
+
 spacy==3.7.2
 
 pytest==9.0.3
