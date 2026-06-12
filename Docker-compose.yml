@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - two-tier-nt
+    restart: always
+
+  flask-app:
+    container_name: two-tier-app
+    build:
+      context: .
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DB=dmj
+    networks:
+      - two-tier-nt
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:
+
+networks:
+  two-tier-nt:
+    driver: bridge
