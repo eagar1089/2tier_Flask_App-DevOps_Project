@@ -4,21 +4,47 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import os
-from pymongo import MongoClient
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
 router = APIRouter(prefix="/test", tags=["test"])
+logger = logging.getLogger(__name__)
 
-# MongoDB connection using PyMongo
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+# MongoDB configuration
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
 MONGO_DB = os.getenv("MONGO_DB", "dmj")
 
-# Create MongoDB client (synchronous)
-client = MongoClient(MONGO_URI)
-db = client[MONGO_DB]
-collection = db["testdata"]  # Using testdata collection as requested
+# Lazy MongoDB client - will connect when first needed
+_mongo_client = None
+_mongo_db = None
+_mongo_collection = None
+
+def get_collection():
+    """Lazily create MongoDB connection only when needed"""
+    global _mongo_client, _mongo_db, _mongo_collection
+    
+    if _mongo_collection is not None:
+        return _mongo_collection
+    
+    try:
+        logger.info(f"Connecting to MongoDB at {MONGO_URI}")
+        from pymongo import MongoClient
+        _mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        # Test the connection
+        _mongo_client.admin.command('ping')
+        _mongo_db = _mongo_client[MONGO_DB]
+        _mongo_collection = _mongo_db["testdata"]
+        
+        # Create index on timestamp for better sorting
+        _mongo_collection.create_index("timestamp")
+        
+        logger.info(f"MongoDB connection successful. Database: {MONGO_DB}, Collection: testdata")
+        return _mongo_collection
+    except Exception as e:
+        logger.error(f"MongoDB connection failed: {str(e)}")
+        return None
 
 # Pydantic models
 class TestData(BaseModel):
@@ -27,11 +53,7 @@ class TestData(BaseModel):
     message: str
     timestamp: Optional[datetime] = None
 
-class TestDataResponse(TestData):
-    id: str
-    timestamp: datetime
-
-# HTML template for the test page
+# HTML template
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -220,6 +242,15 @@ HTML_TEMPLATE = """
             display: none;
         }
         
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -233,14 +264,16 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <h1>Test Interface</h1>
+            <h1>MongoDB Test Interface</h1>
+            <p>Insert test data and view it instantly - No authentication required</p>
         </div>
         
         <div class="content">
             <div id="successMsg" class="success"></div>
+            <div id="errorMsg" class="error-message"></div>
             
             <div class="form-section">
-                <h2>Data</h2>
+                <h2>Insert New Test Data</h2>
                 <form id="insertForm">
                     <div class="form-group">
                         <label>Name *</label>
@@ -254,7 +287,7 @@ HTML_TEMPLATE = """
                         <label>Message *</label>
                         <textarea id="message" name="message" required placeholder="Enter your message"></textarea>
                     </div>
-                    <button type="submit">submit</button>
+                    <button type="submit">Insert into MongoDB</button>
                 </form>
             </div>
             
@@ -274,6 +307,10 @@ HTML_TEMPLATE = """
                 const data = await response.json();
                 
                 const container = document.getElementById('dataContainer');
+                if (!response.ok) {
+                    container.innerHTML = `<div class="empty">Error: ${data.detail || 'Failed to load data'}</div>`;
+                    return;
+                }
                 if (data.length === 0) {
                     container.innerHTML = '<div class="empty">No data found. Insert some data above</div>';
                     return;
@@ -281,7 +318,7 @@ HTML_TEMPLATE = """
                 
                 container.innerHTML = `
                     <div class="stats">
-                        Total Records: ${data.length} | Database: ${data.database || 'dmj'} | Collection: testdata
+                        Total Records: ${data.length} | Database: dmj | Collection: testdata
                     </div>
                     ${data.map(item => `
                         <div class="card">
@@ -315,6 +352,9 @@ HTML_TEMPLATE = """
                 message: document.getElementById('message').value
             };
             
+            document.getElementById('successMsg').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+            
             try {
                 const response = await fetch('/test/insert-data', {
                     method: 'POST',
@@ -324,10 +364,11 @@ HTML_TEMPLATE = """
                     body: JSON.stringify(data)
                 });
                 
+                const result = await response.json();
+                
                 if (response.ok) {
-                    const result = await response.json();
                     const successMsg = document.getElementById('successMsg');
-                    successMsg.textContent = 'Data inserted successfully into MongoDB';
+                    successMsg.textContent = result.message || 'Data inserted successfully into MongoDB';
                     successMsg.style.display = 'block';
                     setTimeout(() => {
                         successMsg.style.display = 'none';
@@ -339,11 +380,18 @@ HTML_TEMPLATE = """
                     
                     await loadData();
                 } else {
-                    alert('Error inserting data');
+                    const errorMsg = document.getElementById('errorMsg');
+                    errorMsg.textContent = result.detail || 'Error inserting data';
+                    errorMsg.style.display = 'block';
+                    setTimeout(() => {
+                        errorMsg.style.display = 'none';
+                    }, 5000);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error connecting to server');
+                const errorMsg = document.getElementById('errorMsg');
+                errorMsg.textContent = 'Error connecting to server: ' + error.message;
+                errorMsg.style.display = 'block';
             }
         });
         
@@ -362,8 +410,11 @@ async def test_page():
 @router.post("/insert-data")
 async def insert_test_data(data: TestData):
     """Insert test data into MongoDB"""
+    collection = get_collection()
+    if collection is None:
+        raise HTTPException(status_code=503, detail="MongoDB connection failed. Please check if MongoDB is running.")
+    
     try:
-        # Prepare document
         document = {
             "name": data.name,
             "email": data.email,
@@ -372,7 +423,6 @@ async def insert_test_data(data: TestData):
             "created_at": datetime.now()
         }
         
-        # Insert into MongoDB (synchronous operation)
         result = collection.insert_one(document)
         
         return {
@@ -381,13 +431,17 @@ async def insert_test_data(data: TestData):
             "message": "Data inserted successfully"
         }
     except Exception as e:
+        logger.error(f"Insert error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/get-data")
 async def get_test_data(limit: int = 50):
     """Retrieve all test data from MongoDB"""
+    collection = get_collection()
+    if collection is None:
+        raise HTTPException(status_code=503, detail="MongoDB connection failed")
+    
     try:
-        # Fetch data, sort by timestamp descending (newest first)
         cursor = collection.find({}).sort("timestamp", -1).limit(limit)
         data = []
         
@@ -402,11 +456,16 @@ async def get_test_data(limit: int = 50):
         
         return data
     except Exception as e:
+        logger.error(f"Retrieve error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.delete("/delete-all")
 async def delete_all_test_data():
     """Delete all test data (for cleanup)"""
+    collection = get_collection()
+    if collection is None:
+        raise HTTPException(status_code=503, detail="MongoDB connection failed")
+    
     try:
         result = collection.delete_many({})
         return {
@@ -414,25 +473,30 @@ async def delete_all_test_data():
             "deleted_count": result.deleted_count
         }
     except Exception as e:
+        logger.error(f"Delete error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/stats")
 async def get_stats():
     """Get statistics about test collection"""
+    collection = get_collection()
+    if collection is None:
+        raise HTTPException(status_code=503, detail="MongoDB connection failed")
+    
     try:
         count = collection.count_documents({})
-        
-        # Get latest document
         latest = collection.find_one({}, sort=[("timestamp", -1)])
         
         return {
             "total_records": count,
             "database": MONGO_DB,
             "collection": "testdata",
+            "mongodb_connected": True,
             "latest_record": {
                 "name": latest.get("name") if latest else None,
                 "timestamp": latest.get("timestamp").isoformat() if latest and latest.get("timestamp") else None
             } if latest else None
         }
     except Exception as e:
+        logger.error(f"Stats error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
