@@ -115,10 +115,6 @@ pipeline {
             Health check: http://localhost:5000/health
             ========================================
             '''
-            
-            mail to: 'sgrp9801@gmail.com',
-                 subject: "Deployment Successful: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                 body: "New version deployed successfully."
         }
         failure {
             echo '''
@@ -134,10 +130,6 @@ pipeline {
                 sh "docker logs two-tier-app --tail 50 || echo 'No logs available'"
                 sh "docker logs mongodb --tail 20 || echo 'No logs available'"
             }
-
-            mail to: 'sgrp9801@gmail.com',
-                 subject: "Deployment Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                 body: "Build failed. Check Jenkins for details."
         }
         always {
             echo 'Cleaning up old Docker images...'
