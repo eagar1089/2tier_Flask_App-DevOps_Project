@@ -10,10 +10,10 @@ A production-style DevOps project featuring a Flask + MongoDB application with f
 
 This project demonstrates a complete DevOps lifecycle for a 2-tier web application:
 
-- **Tier 1 — Application Layer:** Python Flask backend handling HTTP requests and business logic
-- **Tier 2 — Database Layer:** MongoDB for flexible, persistent NoSQL data storage
+- **Tier 1 - Application Layer:** Python Flask backend handling HTTP requests and business logic
+- **Tier 2 - Database Layer:** MongoDB for flexible, persistent NoSQL data storage
 
-The entire software delivery process — from code commit to live deployment — is fully automated using modern DevOps tooling, eliminating manual intervention and human errors.
+The entire software delivery process - from code commit to live deployment - is fully automated using modern DevOps tooling, eliminating manual intervention and human errors.
 
 </details>
 
@@ -113,7 +113,7 @@ The entire software delivery process — from code commit to live deployment —
 
 ---
 
-### Step 1 — Launch AWS EC2 Instance
+### Step 1 - Launch AWS EC2 Instance
 
 1. Log in to AWS Console → EC2 → **Launch Instance**
 2. Choose **Ubuntu 22.04 LTS** AMI
@@ -128,7 +128,7 @@ The entire software delivery process — from code commit to live deployment —
 
 ---
 
-### Step 2 — Install Dependencies on EC2
+### Step 2 - Install Dependencies on EC2
 
 SSH into your instance, then run:
 
@@ -164,7 +164,7 @@ sudo systemctl enable jenkins
 
 ---
 
-### Step 3 — Clone the Repository on EC2
+### Step 3 - Clone the Repository on EC2
 
 ```bash
 git clone https://github.com/eagar1089/2tier_Flask_App-DevOps_Project.git
@@ -173,7 +173,7 @@ cd 2tier_Flask_App-DevOps_Project
 
 ---
 
-### Step 4 — Configure GitHub Actions CI
+### Step 4 - Configure GitHub Actions CI
 
 Create `.github/workflows/ci.yml`:
 
@@ -215,7 +215,7 @@ Screenshot: GitHub Actions CI pipeline running
 
 ---
 
-### Step 5 — Configure Automated Release Management
+### Step 5 - Configure Automated Release Management
 
 Create `.github/workflows/release.yml`:
 
@@ -268,7 +268,7 @@ Screenshot: Automated version tag created after merge
 
 ---
 
-### Step 6 — Configure Jenkins CD Pipeline
+### Step 6 - Configure Jenkins CD Pipeline
 
 1. Open Jenkins at `http://<EC2-PUBLIC-IP>:8080`
 2. Unlock Jenkins using the initial admin password:
@@ -318,7 +318,7 @@ Screenshots: Jenkins build process and status
 
 ---
 
-### Step 7 — Configure Dockerfile
+### Step 7 - Configure Dockerfile
 
 ```dockerfile
 FROM python:3.11-slim-bookworm AS builder
@@ -364,7 +364,7 @@ CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "5000"]
 
 ---
 
-### Step 8 — Configure Docker Compose
+### Step 8 - Configure Docker Compose
 
 ```yaml
 version: "3.8"
@@ -406,7 +406,7 @@ networks:
 
 ---
 
-### Step 9 — Run Jenkins Build
+### Step 9 - Run Jenkins Build
 
 Trigger the pipeline job from the Jenkins dashboard and verify each stage in the build console log.
 
@@ -416,7 +416,7 @@ Screenshot: Containers running on EC2
 
 ---
 
-### Step 10 — Access the Application
+### Step 10 - Access the Application
 
 | Service     | URL                               |
 |-------------|-----------------------------------|
@@ -437,9 +437,9 @@ Screenshot: Flask application health check
 
 ![Workflow](docs/diagrams/workflow.png)
 
-**GitHub Actions** handles Continuous Integration — validating every push automatically, and creating versioned tags and GitHub releases on merge to main.
+**GitHub Actions** handles Continuous Integration - validating every push automatically, and creating versioned tags and GitHub releases on merge to main.
 
-**Jenkins** handles Continuous Deployment — building fresh Docker images and redeploying containers on every successful CI run, with no manual steps required.
+**Jenkins** handles Continuous Deployment - building fresh Docker images and redeploying containers on every successful CI run, with no manual steps required.
 
 </details>
 
@@ -453,13 +453,13 @@ This project delivers a fully automated, production-style DevOps pipeline for a 
 
 **Key outcomes:**
 
-- Zero-touch deployment — a code push triggers the entire pipeline automatically
-- Consistent environments — Docker eliminates environment-specific failures across machines
-- Faster release cycles — automated builds and deployments reduce time-to-production
-- Reliable and repeatable — every deployment follows the same defined pipeline stages
-- Cloud-ready — hosted on AWS EC2 with proper security group and network configuration
+- Zero-touch deployment - a code push triggers the entire pipeline automatically
+- Consistent environments - Docker eliminates environment-specific failures across machines
+- Faster release cycles - automated builds and deployments reduce time-to-production
+- Reliable and repeatable - every deployment follows the same defined pipeline stages
+- Cloud-ready - hosted on AWS EC2 with proper security group and network configuration
 
-This project demonstrates core DevOps engineering skills including CI/CD pipeline design, containerization, cloud infrastructure management, and automation — applicable to roles in DevOps Engineering, Cloud Engineering, and Site Reliability Engineering.
+This project demonstrates core DevOps engineering skills including CI/CD pipeline design, containerization, cloud infrastructure management, and automation - applicable to roles in DevOps Engineering, Cloud Engineering, and Site Reliability Engineering.
 
 </details>
 
@@ -467,4 +467,4 @@ This project demonstrates core DevOps engineering skills including CI/CD pipelin
 
 ## Author
 
-**Sagar** — [GitHub Profile](https://github.com/eagar1089)
+**Sagar** - [GitHub Profile](https://github.com/eagar1089)
