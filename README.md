@@ -1,132 +1,108 @@
 # DevOps Project Report: Automated CI/CD Pipeline for a 2-Tier Flask Application on AWS
 
-
-> A production-style DevOps project featuring a Flask + MongoDB application with fully automated CI/CD using GitHub Actions, Jenkins, Docker, and AWS EC2.
-
----
-
-## Table of Contents
-
-- [Project Overview](#-project-overview)
-- [Technology Stack](#-technology-stack)
-- [Architecture Diagram](#-architecture-diagram)
-- [Infrastructure Diagram](#-infrastructure-diagram)
-- [Project Structure](#-project-structure)
-- [Setup & Deployment Steps](#-setup--deployment-steps)
-- [CI/CD Pipeline Explained](#-cicd-pipeline-explained)
-- [Conclusion](#-conclusion)
+A production-style DevOps project featuring a Flask + MongoDB application with fully automated CI/CD using GitHub Actions, Jenkins, Docker, and AWS EC2.
 
 ---
 
-## Project Overview
+<details>
+<summary><strong>Project Overview</strong></summary>
+<br>
 
-Project demonstrates a complete **DevOps lifecycle** for a 2-tier web application:
+This project demonstrates a complete DevOps lifecycle for a 2-tier web application:
 
 - **Tier 1 - Application Layer:** Python Flask backend handling HTTP requests and business logic
 - **Tier 2 - Database Layer:** MongoDB for flexible, persistent NoSQL data storage
 
-The entire software delivery process - from code commit to live deployment - is **fully automated** using modern DevOps tooling, eliminating manual intervention and human errors.
+The entire software delivery process - from code commit to live deployment - is fully automated using modern DevOps tooling, eliminating manual intervention and human errors.
+
+</details>
 
 ---
 
-## Technology Stack
+<details>
+<summary><strong>Technology Stack</strong></summary>
+<br>
 
-| Category          | Technology                          |
-|-------------------|--------------------------------------|
-| Backend           | Python, Flask                        |
-| Database          | MongoDB                              |
-| Version Control   | Git, GitHub                          |
-| CI                | GitHub Actions                       |
-| CD                | Jenkins                              |
-| Containerization  | Docker                               |
-| Orchestration     | Docker Compose                       |
-| Cloud             | AWS EC2 (Ubuntu Linux)               |
-| Automation        | Shell Scripts, YAML Workflows        |
+| Category         | Technology                        |
+|------------------|-----------------------------------|
+| Backend          | Python, Flask                     |
+| Database         | MongoDB                           |
+| Version Control  | Git, GitHub                       |
+| CI               | GitHub Actions                    |
+| CD               | Jenkins                           |
+| Containerization | Docker                            |
+| Orchestration    | Docker Compose                    |
+| Cloud            | AWS EC2 (Ubuntu Linux)            |
+| Automation       | Shell Scripts, YAML Workflows     |
 
----
-
-## Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        DEVELOPER MACHINE                        │
-│                                                                 │
-│   [ Code Changes ]  ──►  git commit & push                      │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        GITHUB REPOSITORY                        │
-│                                                                 │
-│   main branch  ──►  .github/workflows/ci.yml (triggered)        │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    GITHUB ACTIONS (CI Layer)                    │
-│                                                                 │
-│   ┌─────────────────────────────────────────────────────────┐   │
-│   │  ✔ Checkout Code  →  Install Dependencies               │   │
-│   │  ✔ Validate Application  →  Run Tests                   │   │
-│   │  ✔ Report Build Status                                  │   │
-│   └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                                 (on success)
-                               
-┌─────────────────────────────────────────────────────────────────┐
-│                    JENKINS (CD Layer) on EC2                    │
-│                                                                 │
-│   ┌─────────────────────────────────────────────────────────┐   │
-│   │  Stage 1: Pull Latest Code from GitHub                  │   │
-│   │  Stage 2: Build Docker Images                           │   │
-│   │  Stage 3: Stop Old Containers                           │   │
-│   │  Stage 4: Start New Containers via Docker Compose       │   │
-│   │  Stage 5: Health Check & Verification                   │   │
-│   └─────────────────────────────────────────────────────────┘   │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  AWS EC2 - RUNNING CONTAINERS                    │
-│                                                                 │
-│   ┌────────────────────┐     ┌────────────────────────────┐     │
-│   │  Flask Container   │────►│   MongoDB Container        │     │
-│   │  (App Tier)        │     │   (Database Tier)          │     │
-│   │  Port: 5000        │     │   Port: 27017              │     │
-│   └────────────────────┘     └────────────────────────────┘     │
-│              │                                                   │
-│              ▼                                                   │
-│       [ Users / Browser ]                                        │
-└─────────────────────────────────────────────────────────────────┘
-```
+</details>
 
 ---
 
+<details>
+<summary><strong>Architecture Diagram</strong></summary>
+<br>
 
+![Architecture](docs/diagrams/architecture.png)
 
-## 📁 Project Structure
+</details>
+
+---
+
+<details>
+<summary><strong>Infrastructure Diagram</strong></summary>
+<br>
+![Infrastructure](docs/diagrams/Infrastructure.png)
+
+</details>
+
+---
+
+<details>
+<summary><strong>Project Structure</strong></summary>
+<br>
 
 ```
 2tier_Flask_App-DevOps_Project/
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # GitHub Actions CI workflow
+│       ├── ci.yml                    # GitHub Actions CI workflow
+│       └── release.yml               # Automated release & version tagging
 │
-├── app/
-│   ├── app.py                  # Main Flask application
-│   ├── requirements.txt        # Python dependencies
-│   └── templates/              # HTML templates
+├── backend/
+│   ├── main.py                       # Main Flask application
+│   ├── requirements.txt              # Python dependencies
+│   └── templates/                    # HTML templates
 │
-├── Dockerfile                  # Flask app Docker image definition
-├── docker-compose.yml          # Multi-container orchestration
-├── Jenkinsfile                 # Jenkins pipeline definition
+├── docs/
+│   ├── diagrams/
+│   │   ├── architecture.png          # System architecture diagram
+│   │   ├── Infrastructure.png        # AWS infrastructure diagram
+│   │   └── workflow.png              # Pipeline workflow diagram
+│   │
+│   └── screenshots/
+│       ├── ci.png                    # GitHub Actions pipeline
+│       ├── consoleoutput.png         # Jenkins console output
+│       ├── ec2_services.png          # Docker containers on EC2
+│       ├── flaskhealth.png           # Flask health check
+│       ├── jobbuild.png              # Jenkins build process
+│       ├── jobstatus.png             # Jenkins build status
+│       └── version.png               # Version tag information
+│
+├── Dockerfile                        # Flask app Docker image definition
+├── docker-compose.yml                # Multi-container orchestration
+├── Jenkinsfile                       # Jenkins pipeline definition
 └── README.md
 ```
 
+</details>
+
 ---
 
-## ⚙️ Setup & Deployment Steps
+<details>
+<summary><strong>Setup & Deployment Steps</strong></summary>
+<br>
 
 ### Prerequisites
 
@@ -137,25 +113,19 @@ The entire software delivery process - from code commit to live deployment - is 
 
 ---
 
-### Prerequisites
-
-- AWS account with EC2 access
-- GitHub account
-- Docker & Docker Compose installed on EC2
-- Jenkins installed on EC2
-
----
 ### Step 1 - Launch AWS EC2 Instance
 
 1. Log in to AWS Console → EC2 → **Launch Instance**
 2. Choose **Ubuntu 22.04 LTS** AMI
-3. Select instance type (t2.micro for free tier)
+3. Select instance type (`t2.micro` for free tier)
+   25gb storage and 2 gb swap 
 4. Configure Security Group to allow:
    - Port **22** (SSH)
    - Port **5000** (Flask Application)
-   - Port **8080** (Jenkins)
-   - Port **50000** (JenkinsAgents)
+   - Port **8080** (Jenkins UI)
+   - Port **50000** (Jenkins Agents)
 5. Download your `.pem` key pair and launch
+
 ---
 
 ### Step 2 - Install Dependencies on EC2
@@ -191,7 +161,10 @@ sudo apt update && sudo apt install jenkins -y
 sudo systemctl start jenkins
 sudo systemctl enable jenkins
 ```
-### Step 3 - Clone the Repository on ec2 instance
+
+---
+
+### Step 3 - Clone the Repository on EC2
 
 ```bash
 git clone https://github.com/eagar1089/2tier_Flask_App-DevOps_Project.git
@@ -200,9 +173,9 @@ cd 2tier_Flask_App-DevOps_Project
 
 ---
 
-### Step 4 - Configure GitHub Actions (CI)
+### Step 4 - Configure GitHub Actions CI
 
-Create `.github/workflows/ci.yml` :
+Create `.github/workflows/ci.yml`:
 
 ```yaml
 name: CI Pipeline
@@ -232,17 +205,21 @@ jobs:
 
       - name: Validate Application
         run: |
-          python -m py_compile app/app.py
+          python -m py_compile backend/main.py
           echo "Application validation passed"
 ```
+
+Screenshot: GitHub Actions CI pipeline running
+
+![CI Pipeline](docs/screenshots/ci.png)
 
 ---
 
 ### Step 5 - Configure Automated Release Management
 
-Create `.github/workflows/release.yml` :
+Create `.github/workflows/release.yml`:
 
-```
+```yaml
 name: Release
 
 on:
@@ -284,9 +261,14 @@ jobs:
           echo "New tag: ${{ steps.tag_version.outputs.new_tag }}"
           echo "Previous tag: ${{ steps.tag_version.outputs.previous_tag }}"
 ```
+
+Screenshot: Automated version tag created after merge
+
+![Version Tag](docs/screenshots/version.png)
+
 ---
 
-### Step 6 - Configure Jenkins (CD)
+### Step 6 - Configure Jenkins CD Pipeline
 
 1. Open Jenkins at `http://<EC2-PUBLIC-IP>:8080`
 2. Unlock Jenkins using the initial admin password:
@@ -294,9 +276,8 @@ jobs:
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
    ```
 3. Install suggested plugins
-4. Create a new **Pipeline** job
-5. Point it to your GitHub repository
-6. Creation of `Jenkinsfile` to your repo as per requirement:
+4. Create a new **Pipeline** job pointed to your GitHub repository
+5. Add the following `Jenkinsfile` to the repo root:
 
 ```groovy
 pipeline {
@@ -328,11 +309,18 @@ pipeline {
     }
 }
 ```
+
+Screenshots: Jenkins build process and status
+
+![Jenkins Job Build](docs/screenshots/jobbuild.png)
+![Jenkins Job Status](docs/screenshots/jobstatus.png)
+![Jenkins Console Output](docs/screenshots/consoleoutput.png)
+
 ---
 
 ### Step 7 - Configure Dockerfile
 
-```
+```dockerfile
 FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
@@ -350,7 +338,8 @@ FROM python:3.11-slim-bookworm AS runtime
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV VENV_PATH=/opt/venv
 COPY --from=builder ${VENV_PATH} ${VENV_PATH}
@@ -360,7 +349,8 @@ ENV PYTHONPATH=/app
 
 COPY backend/ ./backend/
 
-RUN useradd -m -u 1000 -s /usr/sbin/nologin appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 -s /usr/sbin/nologin appuser && \
+    chown -R appuser:appuser /app
 
 USER appuser
 
@@ -371,10 +361,12 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "5000"]
 ```
----
-### Step 8  Configure Docker Compose
 
-```
+---
+
+### Step 8 - Configure Docker Compose
+
+```yaml
 version: "3.8"
 
 services:
@@ -411,76 +403,68 @@ networks:
   two-tier-nt:
     driver: bridge
 ```
----
-### Step 9 - Run JOB build from jenkins 
 
-Do chkeck build console log
+---
+
+### Step 9 - Run Jenkins Build
+
+Trigger the pipeline job from the Jenkins dashboard and verify each stage in the build console log.
+
+Screenshot: Containers running on EC2
+
+![EC2 Services](docs/screenshots/ec2_services.png)
 
 ---
 
 ### Step 10 - Access the Application
 
-| Service          | URL                                    |
-|------------------|----------------------------------------|
-| Flask App        | `http://<EC2-PUBLIC-IP>:5000`          |
-| Jenkins UI       | `http://<EC2-PUBLIC-IP>:8080`          |
+| Service     | URL                               |
+|-------------|-----------------------------------|
+| Flask App   | `http://<EC2-PUBLIC-IP>:5000`     |
+| Jenkins UI  | `http://<EC2-PUBLIC-IP>:8080`     |
+
+Screenshot: Flask application health check
+
+![Flask Health Check](docs/screenshots/flaskhealth.png)
+
+</details>
 
 ---
 
-## 🔄 CI/CD Pipeline Explained
+<details>
+<summary><strong>CI/CD Pipeline Explained</strong></summary>
+<br>
 
-```
-Code Push (*any branch)
-   │
-   ▼
-PR Raise
-   │
-   ▼
-GitHub Actions CI
-   ├── Checkout Code
-   ├── Install Dependencies
-   ├── Validate & Test
-   └── Pass / Fail (notifies developer)
-         │
-         ▼ (on success)
-         │
-         ▼
-GitHub Version Tag Creation
+![Workflow](docs/diagrams/workflow.png)
 
-Jenkins CD Pipeline
-   ├── Stage 1: Pull latest code from GitHub
-   ├── Stage 2: Build Docker image
-   ├── Stage 3: Stop running containers
-   ├── Stage 4: Start new containers via Docker Compose
-   └── Stage 5: Health Check -> Application Live
-```
+**GitHub Actions** handles Continuous Integration - validating every push automatically, and creating versioned tags and GitHub releases on merge to main.
 
-**GitHub Actions** handles Continuous Integration - validating every push automatically and version Tagging and publishing.
+**Jenkins** handles Continuous Deployment - building fresh Docker images and redeploying containers on every successful CI run, with no manual steps required.
 
-**Jenkins** handles Continuous Deployment - building fresh Docker images and redeploying containers on every successful CI run.
+</details>
 
 ---
 
-## ✅ Conclusion
+<details>
+<summary><strong>Conclusion</strong></summary>
+<br>
 
-This project delivers a **fully automated, production-style DevOps pipeline** for a 2-tier web application. By combining GitHub Actions for CI, Jenkins for CD, Docker for containerization, and AWS EC2 for cloud hosting, it replicates real-world industry workflows.
+This project delivers a fully automated, production-style DevOps pipeline for a 2-tier web application. By combining GitHub Actions for CI, Jenkins for CD, Docker for containerization, and AWS EC2 for cloud hosting, it replicates real-world industry workflows end to end.
 
 **Key outcomes:**
 
-- Zero-touch deployment - code push triggers the entire pipeline automatically
-- Consistent environments - Docker eliminates "works on my machine" issues
+- Zero-touch deployment - a code push triggers the entire pipeline automatically
+- Consistent environments - Docker eliminates environment-specific failures across machines
 - Faster release cycles - automated builds and deployments reduce time-to-production
 - Reliable and repeatable - every deployment follows the same defined pipeline stages
-- Cloud-ready - hosted on AWS EC2 with proper security group configuration
+- Cloud-ready - hosted on AWS EC2 with proper security group and network configuration
 
-This project demonstrates core **DevOps engineering skills** including CI/CD pipeline design, containerization, cloud infrastructure management, and automation - making it well-suited for roles in DevOps, Cloud Engineering, and Site Reliability Engineering.
+This project demonstrates core DevOps engineering skills including CI/CD pipeline design, containerization, cloud infrastructure management, and automation - applicable to roles in DevOps Engineering, Cloud Engineering, and Site Reliability Engineering.
+
+</details>
 
 ---
 
 ## Author
 
-**sagar** - [GitHub Profile](https://github.com/eagar1089)
-
----
-
-> If you found this project helpful, consider giving it a star on GitHub!
+**Sagar** - [GitHub Profile](https://github.com/eagar1089)
