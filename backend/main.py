@@ -2,6 +2,8 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
+from routers import test_mongo  # test router
+
 import json as _json
 import importlib
 import logging
@@ -170,6 +172,7 @@ def root():
         "status": "ok",
         "health": "/healthz",
         "docs": "/docs",
+        "test": "/test_mongo",
     }
 
 
@@ -178,6 +181,7 @@ app.include_router(memories.router, prefix="/memories", tags=["memories"])
 app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 app.include_router(spotify.router, prefix="/spotify", tags=["spotify"])
 app.include_router(ai_features.router, prefix="/ai", tags=["ai"])
+app.include_router(test_mongo.router)
 
 
 scheduler = BackgroundScheduler()
