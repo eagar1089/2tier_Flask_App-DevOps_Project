@@ -1,27 +1,24 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = APIRouter(prefix="/test", tags=["test"])
 
-# MongoDB connection
-MONGO_HOST = os.environ.get("MONGO_HOST", "mongodb")
-MONGO_PORT = int(os.environ.get("MONGO_PORT", 27017))
-MONGO_DB = os.environ.get("MONGO_DB", "dmj")
+# MongoDB connection using PyMongo
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_DB = os.getenv("MONGO_DB", "dmj")
 
-# MongoDB client (create this once and reuse)
-client = None
-db = None
-
-def get_db():
-    global client, db
-    if client is None:
-        client = AsyncIOMotorClient(f"mongodb://{MONGO_HOST}:{MONGO_PORT}")
-        db = client[MONGO_DB]
-    return db
+# Create MongoDB client (synchronous)
+client = MongoClient(MONGO_URI)
+db = client[MONGO_DB]
+collection = db["testdata"]  # Using testdata collection as requested
 
 # Pydantic models
 class TestData(BaseModel):
@@ -214,17 +211,6 @@ HTML_TEMPLATE = """
             padding: 40px;
         }
         
-        .delete-btn {
-            background: #dc3545;
-            margin-left: 10px;
-            padding: 5px 15px;
-            font-size: 12px;
-        }
-        
-        .delete-btn:hover {
-            background: #c82333;
-        }
-        
         .success {
             background: #d4edda;
             color: #155724;
@@ -296,7 +282,7 @@ HTML_TEMPLATE = """
                 
                 container.innerHTML = `
                     <div class="stats">
-                        Total Records: ${data.length} | Database: dmj | Collection: test
+                        Total Records: ${data.length} | Database: ${data.database || 'dmj'} | Collection: testdata
                     </div>
                     ${data.map(item => `
                         <div class="card">
@@ -372,16 +358,12 @@ HTML_TEMPLATE = """
 @router.get("/")
 async def test_page():
     """Serve the test HTML page"""
-    from fastapi.responses import HTMLResponse
     return HTMLResponse(content=HTML_TEMPLATE)
 
 @router.post("/insert-data")
 async def insert_test_data(data: TestData):
     """Insert test data into MongoDB"""
     try:
-        db = get_db()
-        collection = db["test"]
-        
         # Prepare document
         document = {
             "name": data.name,
@@ -391,8 +373,8 @@ async def insert_test_data(data: TestData):
             "created_at": datetime.now()
         }
         
-        # Insert into MongoDB
-        result = await collection.insert_one(document)
+        # Insert into MongoDB (synchronous operation)
+        result = collection.insert_one(document)
         
         return {
             "success": True,
@@ -406,14 +388,11 @@ async def insert_test_data(data: TestData):
 async def get_test_data(limit: int = 50):
     """Retrieve all test data from MongoDB"""
     try:
-        db = get_db()
-        collection = db["test"]
-        
         # Fetch data, sort by timestamp descending (newest first)
         cursor = collection.find({}).sort("timestamp", -1).limit(limit)
         data = []
         
-        async for doc in cursor:
+        for doc in cursor:
             data.append({
                 "id": str(doc["_id"]),
                 "name": doc.get("name"),
@@ -430,9 +409,7 @@ async def get_test_data(limit: int = 50):
 async def delete_all_test_data():
     """Delete all test data (for cleanup)"""
     try:
-        db = get_db()
-        collection = db["test"]
-        result = await collection.delete_many({})
+        result = collection.delete_many({})
         return {
             "success": True,
             "deleted_count": result.deleted_count
@@ -444,17 +421,15 @@ async def delete_all_test_data():
 async def get_stats():
     """Get statistics about test collection"""
     try:
-        db = get_db()
-        collection = db["test"]
-        count = await collection.count_documents({})
+        count = collection.count_documents({})
         
         # Get latest document
-        latest = await collection.find_one({}, sort=[("timestamp", -1)])
+        latest = collection.find_one({}, sort=[("timestamp", -1)])
         
         return {
             "total_records": count,
             "database": MONGO_DB,
-            "collection": "test",
+            "collection": "testdata",
             "latest_record": {
                 "name": latest.get("name") if latest else None,
                 "timestamp": latest.get("timestamp").isoformat() if latest and latest.get("timestamp") else None
