@@ -233,15 +233,14 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <h1>MongoDB Test Interface</h1>
-            <p>Insert test data and view it instantly - No authentication required</p>
+            <h1>Test Interface</h1>
         </div>
         
         <div class="content">
             <div id="successMsg" class="success"></div>
             
             <div class="form-section">
-                <h2>Insert New Test Data</h2>
+                <h2>Data</h2>
                 <form id="insertForm">
                     <div class="form-group">
                         <label>Name *</label>
@@ -255,7 +254,7 @@ HTML_TEMPLATE = """
                         <label>Message *</label>
                         <textarea id="message" name="message" required placeholder="Enter your message"></textarea>
                     </div>
-                    <button type="submit">Insert into MongoDB</button>
+                    <button type="submit">submit</button>
                 </form>
             </div>
             
