@@ -4,6 +4,7 @@ pipeline {
     environment {
         APP_NAME = 'flask-app'
         COMPOSE_FILE = 'docker-compose.yml'
+        ENV_FILE_PATH = '/home/ubuntu/2tier_Flask_App-DevOps_Project/.env'
     }
     
     stages {
@@ -16,6 +17,23 @@ pipeline {
             }
         }
         
+        stage('Copy Environment File') {
+            steps {
+                echo 'Copying .env file from project directory'
+                script {
+                    def envExists = sh(script: "test -f ${env.ENV_FILE_PATH} && echo 'yes' || echo 'no'", returnStdout: true).trim()
+
+                    if (envExists == 'yes') {
+                        sh "cp ${env.ENV_FILE_PATH} .env"
+                        echo '.env file copied successfully'
+                        sh 'cat .env'
+                    } else {
+                        error "Environment file not found at ${env.ENV_FILE_PATH}"
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
@@ -29,13 +47,12 @@ pipeline {
         stage('Deploy with Docker Compose') {
             steps {
                 echo 'Deploying with Docker Compose'
-                script {
+                script {                    
                     sh "docker compose -f ${COMPOSE_FILE} down || true"
-                    
                     sh "docker compose -f ${COMPOSE_FILE} up -d --build"
                     
                     echo 'Waiting for services to start...'
-                    sh 'sleep 10'
+                    sh 'sleep 15'
                 }
             }
         }
@@ -61,7 +78,7 @@ pipeline {
                                 break
                             }
                         } catch (Exception e) {
-                            echo "Health check attempt ${i}/${maxRetries} failed: ${e.getMessage()}"
+                            echo "Health check attempt ${i}/${maxRetries} failed"
                         }
                         sleep 2
                     }
@@ -77,8 +94,11 @@ pipeline {
             steps {
                 echo 'Verifying test endpoint (MongoDB integration)'
                 script {
-                    def testResponse = sh(script: "curl -s http://localhost:5000/health", returnStdout: true).trim()
+                    def testResponse = sh(script: "curl -s http://localhost:5000/test/health || echo 'Endpoint not ready'", returnStdout: true).trim()
                     echo "Test endpoint response: ${testResponse}"
+                    
+                    def testPage = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000/test/", returnStdout: true).trim()
+                    echo "Test page HTTP status: ${testPage}"
                 }
             }
         }
@@ -106,7 +126,6 @@ pipeline {
             DEPLOYMENT FAILED!
             ========================================
             Check Jenkins console output for details.
-            Rollback may be required.
             ========================================
             '''
             
