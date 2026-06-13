@@ -1,10 +1,9 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from bson import ObjectId
 
 router = APIRouter(prefix="/test", tags=["test"])
 
@@ -248,7 +247,7 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <h1>📝 MongoDB Test Interface</h1>
+            <h1>MongoDB Test Interface</h1>
             <p>Insert test data and view it instantly - No authentication required</p>
         </div>
         
@@ -256,7 +255,7 @@ HTML_TEMPLATE = """
             <div id="successMsg" class="success"></div>
             
             <div class="form-section">
-                <h2>✨ Insert New Test Data</h2>
+                <h2>Insert New Test Data</h2>
                 <form id="insertForm">
                     <div class="form-group">
                         <label>Name *</label>
@@ -270,12 +269,12 @@ HTML_TEMPLATE = """
                         <label>Message *</label>
                         <textarea id="message" name="message" required placeholder="Enter your message"></textarea>
                     </div>
-                    <button type="submit">💾 Insert into MongoDB</button>
+                    <button type="submit">Insert into MongoDB</button>
                 </form>
             </div>
             
             <div class="data-section">
-                <h2>📊 Stored Data (Test Collection)</h2>
+                <h2>Stored Data (Test Collection)</h2>
                 <div id="dataContainer">
                     <div class="empty">Loading data...</div>
                 </div>
@@ -291,28 +290,28 @@ HTML_TEMPLATE = """
                 
                 const container = document.getElementById('dataContainer');
                 if (data.length === 0) {
-                    container.innerHTML = '<div class="empty">📭 No data found. Insert some data above!</div>';
+                    container.innerHTML = '<div class="empty">No data found. Insert some data above</div>';
                     return;
                 }
                 
                 container.innerHTML = `
                     <div class="stats">
-                        📈 Total Records: ${data.length} | 🗄️ Database: dmj | 📁 Collection: test
+                        Total Records: ${data.length} | Database: dmj | Collection: test
                     </div>
                     ${data.map(item => `
                         <div class="card">
                             <div class="card-header">
-                                <span class="card-title">👤 ${escapeHtml(item.name)}</span>
-                                <span class="card-time">🕒 ${new Date(item.timestamp).toLocaleString()}</span>
+                                <span class="card-title">${escapeHtml(item.name)}</span>
+                                <span class="card-time">${new Date(item.timestamp).toLocaleString()}</span>
                             </div>
-                            <div class="card-email">📧 ${escapeHtml(item.email)}</div>
-                            <div class="card-message">💬 ${escapeHtml(item.message)}</div>
+                            <div class="card-email">${escapeHtml(item.email)}</div>
+                            <div class="card-message">${escapeHtml(item.message)}</div>
                         </div>
                     `).join('')}
                 `;
             } catch (error) {
                 console.error('Error loading data:', error);
-                document.getElementById('dataContainer').innerHTML = '<div class="empty">❌ Error loading data. Make sure MongoDB is running.</div>';
+                document.getElementById('dataContainer').innerHTML = '<div class="empty">Error loading data. Make sure MongoDB is running.</div>';
             }
         }
         
@@ -343,18 +342,16 @@ HTML_TEMPLATE = """
                 if (response.ok) {
                     const result = await response.json();
                     const successMsg = document.getElementById('successMsg');
-                    successMsg.textContent = '✅ Data inserted successfully into MongoDB!';
+                    successMsg.textContent = 'Data inserted successfully into MongoDB';
                     successMsg.style.display = 'block';
                     setTimeout(() => {
                         successMsg.style.display = 'none';
                     }, 3000);
                     
-                    // Clear form
                     document.getElementById('name').value = '';
                     document.getElementById('email').value = '';
                     document.getElementById('message').value = '';
                     
-                    // Reload data
                     await loadData();
                 } else {
                     alert('Error inserting data');
@@ -365,10 +362,7 @@ HTML_TEMPLATE = """
             }
         });
         
-        // Load data on page load
         loadData();
-        
-        // Auto-refresh every 10 seconds
         setInterval(loadData, 10000);
     </script>
 </body>
